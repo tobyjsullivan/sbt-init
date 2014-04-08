@@ -1,41 +1,40 @@
 import sbt._
+import sbt.complete.Parsers._
 import java.io._
 
 object SbtInit extends Plugin {
   override lazy val settings = Seq(Keys.commands += initCommand)
 
-  private lazy val initCommand = Command.command("init") { (state: State) =>
+  private lazy val initCommand = Command.args("init", "args") { (state: State, args: Seq[String]) =>
     val projectPath = state.baseDir
-    println(projectPath)
 
-    print("Project name [empty-project]: ")
-    val projName = readLine() match {
-      case "" => "empty-project"
-      case s: String => s
+    val projName = args match {
+      case x :: xs => x
+      case _ => {
+        print("Project name [empty-project]: ")
+        readLine() match {
+          case "" => "empty-project"
+          case s: String => s
+        }
+      }
     }
 
-    print("Project version [1.0]: ")
-    val projVer = readLine() match {
-      case "" => "1.0"
-      case s: String => s
-    }
+    println(s"Creating project...")
 
-    println(s"Creating $projName v$projVer")
-
-    createBuildSbt(projectPath, projName, projVer)
+    createBuildSbt(projectPath, projName)
 
     createSrcDirectories(projectPath)
 
     state
   }
 
-  private def createBuildSbt(path: File, projName: String, projVer: String) {
+  private def createBuildSbt(path: File, projName: String) {
     val buildSbtPath = "build.sbt"
 
     val f = new File(path, buildSbtPath)
     if(f.exists()) println("build.sbt already exists. Skipping")
     else {
-      val content = "name := \""+projName+"\"\n\nversion := \""+projVer+"\"\n\nscalaVersion := \"2.10.3\"\n"
+      val content = "name := \""+projName+"\"\n\nversion := \"1.0-SNAPSHOT\"\n\nscalaVersion := \"2.10.3\"\n"
 
       f.createNewFile()
       val fw = new FileWriter(f.getAbsoluteFile())
